@@ -1796,7 +1796,7 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
                         locked = lockEntries(req, req.topologyVersion());
 
-                        boolean hasNear = ctx.discovery().cacheNearNode(node, name());
+                        boolean hasNear = req.nearCache();
 
                         // Assign next version for update inside entries lock.
                         GridCacheVersion ver = ctx.versions().next(top.topologyVersion());
@@ -2406,8 +2406,6 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
         AffinityTopologyVersion topVer = req.topologyVersion();
 
-        boolean checkReaders = hasNear || ctx.discovery().hasNearCache(ctx.cacheId(), topVer);
-
         boolean intercept = ctx.config().getInterceptor() != null;
 
         AffinityAssignment affAssignment = ctx.affinity().assignment(topVer);
@@ -2434,7 +2432,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
                 Collection<UUID> readers = null;
                 Collection<UUID> filteredReaders = null;
 
-                if (checkReaders) {
+                // TODO
+                if (true) {
                     readers = entry.readers();
                     filteredReaders = F.view(entry.readers(), F.notEqualTo(nearNode.id()));
                 }
@@ -2627,8 +2626,6 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
         AffinityTopologyVersion topVer = req.topologyVersion();
 
-        boolean checkReaders = hasNear || ctx.discovery().hasNearCache(ctx.cacheId(), topVer);
-
         CacheStorePartialUpdateException storeErr = null;
 
         try {
@@ -2691,7 +2688,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
                     Collection<UUID> readers = null;
                     Collection<UUID> filteredReaders = null;
 
-                    if (checkReaders) {
+                    // TODO
+                    if (true) {
                         readers = entry.readers();
                         filteredReaders = F.view(entry.readers(), F.notEqualTo(nearNode.id()));
                     }

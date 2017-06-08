@@ -92,6 +92,9 @@ public abstract class GridDhtAtomicAbstractUpdateFuture extends GridCacheFutureA
     /** Response count. */
     private volatile int resCnt;
 
+    /** */
+    private boolean addedReaders;
+
     /**
      * @param cctx Cache context.
      * @param writeVer Write version.
@@ -175,7 +178,9 @@ public abstract class GridDhtAtomicAbstractUpdateFuture extends GridCacheFutureA
 
         List<ClusterNode> affNodes = affAssignment.get(entry.partition());
 
-        List<ClusterNode> dhtNodes = cctx.dht().topology().nodes(entry.partition(), affAssignment, affNodes);
+        // Client has seen that rebalancing finished, it is safe to use affinity mapping.
+        List<ClusterNode> dhtNodes = updateReq.affinityMapping() ?
+            affNodes : cctx.dht().topology().nodes(entry.partition(), affAssignment, affNodes);
 
         if (dhtNodes == null)
             dhtNodes = affNodes;
@@ -276,6 +281,8 @@ public abstract class GridDhtAtomicAbstractUpdateFuture extends GridCacheFutureA
                     null);
 
                 mappings.put(nodeId, updateReq);
+
+                addedReaders = true;
             }
 
             updateReq.addNearWriteValue(entry.key(),
@@ -361,7 +368,7 @@ public abstract class GridDhtAtomicAbstractUpdateFuture extends GridCacheFutureA
         GridNearAtomicUpdateResponse updateRes,
         GridDhtAtomicCache.UpdateReplyClosure completionCb) {
         if (F.isEmpty(mappings)) {
-            updateRes.dhtNodes(Collections.<UUID>emptyList());
+            updateRes.mapping(Collections.<UUID>emptyList());
 
             completionCb.apply(updateReq, updateRes);
 
@@ -377,13 +384,25 @@ public abstract class GridDhtAtomicAbstractUpdateFuture extends GridCacheFutureA
 
         boolean needMapping = updateReq.fullSync() && (updateReq.needPrimaryResponse() || !sendAllToDht());
 
-        if (needMapping) {
+        boolean readersOnlyNodes = false;
+
+        if (!updateReq.needPrimaryResponse() && addedReaders) {
+            for (GridDhtAtomicAbstractUpdateRequest dhtReq : mappings.values()) {
+                if (dhtReq.nearSize() > 0 && dhtReq.size() == 0) {
+                    readersOnlyNodes = true;
+
+                    break;
+                }
+            }
+        }
+
+        if (needMapping || readersOnlyNodes) {
             initMapping(updateRes);
 
             needReplyToNear = true;
         }
 
-        sendDhtRequests(nearNode, ret);
+        sendDhtRequests(nearNode, ret, readersOnlyNodes);
 
         if (needReplyToNear)
             completionCb.apply(updateReq, updateRes);
@@ -393,24 +412,24 @@ public abstract class GridDhtAtomicAbstractUpdateFuture extends GridCacheFutureA
      * @param updateRes Response.
      */
     private void initMapping(GridNearAtomicUpdateResponse updateRes) {
-        List<UUID> dhtNodes;
+        List<UUID> mapping;
 
         if (!F.isEmpty(mappings)) {
-            dhtNodes = new ArrayList<>(mappings.size());
+            mapping = new ArrayList<>(mappings.size());
 
-            dhtNodes.addAll(mappings.keySet());
+            mapping.addAll(mappings.keySet());
         }
         else
-            dhtNodes = Collections.emptyList();
+            mapping = Collections.emptyList();
 
-        updateRes.dhtNodes(dhtNodes);
+        updateRes.mapping(mapping);
     }
 
     /**
      * @param nearNode Near node.
      * @param ret Return value.
      */
-    private void sendDhtRequests(ClusterNode nearNode, GridCacheReturn ret) {
+    private void sendDhtRequests(ClusterNode nearNode, GridCacheReturn ret, boolean readersOnlyNodes) {
         for (GridDhtAtomicAbstractUpdateRequest req : mappings.values()) {
             try {
                 assert !cctx.localNodeId().equals(req.nodeId()) : req;
@@ -418,7 +437,8 @@ public abstract class GridDhtAtomicAbstractUpdateFuture extends GridCacheFutureA
                 if (updateReq.fullSync()) {
                     req.nearReplyInfo(nearNode.id(), updateReq.futureId());
 
-                    if (ret.emptyResult())
+                    // If there are readers updates nearNode should not finish before primary response received.
+                    if (!readersOnlyNodes && ret.emptyResult())
                         req.hasResult(true);
                 }
 

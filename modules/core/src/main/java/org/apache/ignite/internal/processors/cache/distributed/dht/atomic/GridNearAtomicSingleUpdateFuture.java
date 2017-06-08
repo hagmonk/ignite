@@ -547,8 +547,7 @@ public class GridNearAtomicSingleUpdateFuture extends GridNearAtomicAbstractUpda
         else
             val = EntryProcessorResourceInjectorProxy.wrap(cctx.kernalContext(), (EntryProcessor)val);
 
-        boolean mappingKnown = cctx.topology().rebalanceFinished(topVer) &&
-            !cctx.discovery().hasNearCache(cctx.cacheId(), topVer);
+        boolean mappingKnown = cctx.topology().rebalanceFinished(topVer);
 
         List<ClusterNode> nodes = cctx.affinity().nodesByKey(cacheKey, topVer);
 
@@ -562,6 +561,15 @@ public class GridNearAtomicSingleUpdateFuture extends GridNearAtomicAbstractUpda
 
         GridNearAtomicAbstractUpdateRequest req;
 
+        byte flags = GridNearAtomicAbstractUpdateRequest.flags(nearEnabled,
+            topLocked,
+            retval,
+            mappingKnown,
+            needPrimaryRes,
+            skipStore,
+            keepBinary,
+            recovery);
+
         if (canUseSingleRequest()) {
             if (op == TRANSFORM) {
                 req = new GridNearAtomicSingleUpdateInvokeRequest(
@@ -569,17 +577,12 @@ public class GridNearAtomicSingleUpdateFuture extends GridNearAtomicAbstractUpda
                     primary.id(),
                     futId,
                     topVer,
-                    topLocked,
                     syncMode,
                     op,
-                    retval,
                     invokeArgs,
                     subjId,
                     taskNameHash,
-                    needPrimaryRes,
-                    skipStore,
-                    keepBinary,
-                    recovery,
+                    flags,
                     cctx.deploymentEnabled());
             }
             else {
@@ -589,16 +592,11 @@ public class GridNearAtomicSingleUpdateFuture extends GridNearAtomicAbstractUpda
                         primary.id(),
                         futId,
                         topVer,
-                        topLocked,
                         syncMode,
                         op,
-                        retval,
                         subjId,
                         taskNameHash,
-                        needPrimaryRes,
-                        skipStore,
-                        keepBinary,
-                        recovery,
+                        flags,
                         cctx.deploymentEnabled());
                 }
                 else {
@@ -607,17 +605,12 @@ public class GridNearAtomicSingleUpdateFuture extends GridNearAtomicAbstractUpda
                         primary.id(),
                         futId,
                         topVer,
-                        topLocked,
                         syncMode,
                         op,
-                        retval,
                         filter,
                         subjId,
                         taskNameHash,
-                        needPrimaryRes,
-                        skipStore,
-                        keepBinary,
-                        recovery,
+                        flags,
                         cctx.deploymentEnabled());
                 }
             }
@@ -628,19 +621,14 @@ public class GridNearAtomicSingleUpdateFuture extends GridNearAtomicAbstractUpda
                 primary.id(),
                 futId,
                 topVer,
-                topLocked,
                 syncMode,
                 op,
-                retval,
                 expiryPlc,
                 invokeArgs,
                 filter,
                 subjId,
                 taskNameHash,
-                needPrimaryRes,
-                skipStore,
-                keepBinary,
-                recovery,
+                flags,
                 cctx.deploymentEnabled(),
                 1);
         }

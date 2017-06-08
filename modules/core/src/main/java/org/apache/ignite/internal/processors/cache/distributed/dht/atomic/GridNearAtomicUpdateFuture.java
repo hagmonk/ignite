@@ -684,11 +684,8 @@ public class GridNearAtomicUpdateFuture extends GridNearAtomicAbstractUpdateFutu
             }
             else {
                 try {
-                    if (req.initMappingLocally() && reqState.dhtNodes.isEmpty()) {
-                        reqState.dhtNodes = null;
-
-                        req.needPrimaryResponse(true);
-                    }
+                    if (req.initMappingLocally() && reqState.mappedNodes.isEmpty())
+                        reqState.resetLocalMapping();
 
                     cctx.io().send(req.nodeId(), req, cctx.ioPolicy());
 
@@ -753,8 +750,7 @@ public class GridNearAtomicUpdateFuture extends GridNearAtomicAbstractUpdateFutu
 
         int size = keys.size();
 
-        boolean mappingKnown = cctx.topology().rebalanceFinished(topVer) &&
-            !cctx.discovery().hasNearCache(cctx.cacheId(), topVer);
+        boolean mappingKnown = cctx.topology().rebalanceFinished(topVer);
 
         try {
             if (size == 1) {
@@ -1008,24 +1004,28 @@ public class GridNearAtomicUpdateFuture extends GridNearAtomicAbstractUpdateFutu
             PrimaryRequestState mapped = pendingMappings.get(nodeId);
 
             if (mapped == null) {
+                byte flags = GridNearAtomicAbstractUpdateRequest.flags(nearEnabled,
+                    topLocked,
+                    retval,
+                    mappingKnown,
+                    needPrimaryRes,
+                    skipStore,
+                    keepBinary,
+                    recovery);
+
                 GridNearAtomicFullUpdateRequest req = new GridNearAtomicFullUpdateRequest(
                     cctx.cacheId(),
                     nodeId,
                     futId,
                     topVer,
-                    topLocked,
                     syncMode,
                     op,
-                    retval,
                     expiryPlc,
                     invokeArgs,
                     filter,
                     subjId,
                     taskNameHash,
-                    needPrimaryRes,
-                    skipStore,
-                    keepBinary,
-                    recovery,
+                    flags,
                     cctx.deploymentEnabled(),
                     keys.size());
 
@@ -1114,24 +1114,28 @@ public class GridNearAtomicUpdateFuture extends GridNearAtomicAbstractUpdateFutu
 
         boolean needPrimaryRes = !mappingKnown || primary.isLocal() || nodes.size() == 1;
 
+        byte flags = GridNearAtomicAbstractUpdateRequest.flags(nearEnabled,
+            topLocked,
+            retval,
+            mappingKnown,
+            needPrimaryRes,
+            skipStore,
+            keepBinary,
+            recovery);
+
         GridNearAtomicFullUpdateRequest req = new GridNearAtomicFullUpdateRequest(
             cctx.cacheId(),
             primary.id(),
             futId,
             topVer,
-            topLocked,
             syncMode,
             op,
-            retval,
             expiryPlc,
             invokeArgs,
             filter,
             subjId,
             taskNameHash,
-            needPrimaryRes,
-            skipStore,
-            keepBinary,
-            recovery,
+            flags,
             cctx.deploymentEnabled(),
             1);
 
