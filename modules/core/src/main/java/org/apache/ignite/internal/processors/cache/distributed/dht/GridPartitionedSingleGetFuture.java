@@ -221,7 +221,7 @@ public class GridPartitionedSingleGetFuture extends GridCacheFutureAdapter<Objec
             return;
 
         if (node.isLocal()) {
-            final GridDhtFuture<Collection<GridCacheEntryInfo>> fut = cctx.dht().getDhtSingleAsync(node.id(),
+            final GridDhtFuture<GridCacheEntryInfo> fut = cctx.dht().getDhtSingleAsync(node.id(),
                 -1,
                 key,
                 false,
@@ -246,14 +246,12 @@ public class GridPartitionedSingleGetFuture extends GridCacheFutureAdapter<Objec
                 map(updTopVer);
             }
             else {
-                fut.listen(new CI1<IgniteInternalFuture<Collection<GridCacheEntryInfo>>>() {
-                    @Override public void apply(IgniteInternalFuture<Collection<GridCacheEntryInfo>> fut) {
+                fut.listen(new CI1<IgniteInternalFuture<GridCacheEntryInfo>>() {
+                    @Override public void apply(IgniteInternalFuture<GridCacheEntryInfo> fut) {
                         try {
-                            Collection<GridCacheEntryInfo> infos = fut.get();
+                            GridCacheEntryInfo info = fut.get();
 
-                            assert F.isEmpty(infos) || infos.size() == 1 : infos;
-
-                            setResult(F.first(infos));
+                            setResult(info);
                         }
                         catch (Exception e) {
                             U.error(log, "Failed to get values from dht cache [fut=" + fut + "]", e);
