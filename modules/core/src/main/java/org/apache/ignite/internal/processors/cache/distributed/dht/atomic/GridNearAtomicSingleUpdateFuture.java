@@ -557,7 +557,7 @@ public class GridNearAtomicSingleUpdateFuture extends GridNearAtomicAbstractUpda
 
         ClusterNode primary = nodes.get(0);
 
-        boolean needPrimaryRes = !mappingKnown || primary.isLocal() || nodes.size() == 1;
+        boolean needPrimaryRes = !mappingKnown || primary.isLocal() || nodes.size() == 1 || nearEnabled;
 
         GridNearAtomicAbstractUpdateRequest req;
 

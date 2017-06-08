@@ -2429,15 +2429,6 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
                 Object writeVal = op == TRANSFORM ? req.entryProcessor(i) : req.writeValue(i);
 
-                Collection<UUID> readers = null;
-                Collection<UUID> filteredReaders = null;
-
-                // TODO
-                if (true) {
-                    readers = entry.readers();
-                    filteredReaders = F.view(entry.readers(), F.notEqualTo(nearNode.id()));
-                }
-
                 GridCacheUpdateAtomicResult updRes = entry.innerUpdate(
                     ver,
                     nearNode.id(),
@@ -2468,6 +2459,8 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
                     /*updateCntr*/null,
                     dhtFut);
 
+                GridDhtCacheEntry.ReaderId[] readers = entry.readersLocked();
+
                 if (dhtFut != null) {
                     if (updRes.sendToDht()) { // Send to backups even in case of remove-remove scenarios.
                         GridCacheVersionConflictContext<?, ?> conflictCtx = updRes.conflictResolveResult();
@@ -2491,9 +2484,10 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
                             updRes.oldValue(),
                             updRes.updateCounter());
 
-                        if (!F.isEmpty(filteredReaders))
+                        if (readers != null)
                             dhtFut.addNearWriteEntries(
-                                filteredReaders,
+                                nearNode,
+                                readers,
                                 entry,
                                 updRes.newValue(),
                                 entryProcessor,
@@ -2521,13 +2515,16 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
                                 res.addNearTtl(i, updRes.newTtl(), updRes.conflictExpireTime());
 
                             if (updRes.newValue() != null) {
-                                IgniteInternalFuture<Boolean> f = entry.addReader(nearNode.id(), req.messageId(), topVer);
+                                IgniteInternalFuture<Boolean> f =
+                                    entry.addReader(nearNode.id(), req.messageId(), topVer);
 
                                 assert f == null : f;
                             }
                         }
-                        else if (F.contains(readers, nearNode.id())) // Reader became primary or backup.
+                        else if (GridDhtCacheEntry.ReaderId.contains(readers, nearNode.id())) {
+                            // Reader became primary or backup.
                             entry.removeReader(nearNode.id(), req.messageId());
+                        }
                         else
                             res.addSkippedIndex(i);
                     }
@@ -2685,14 +2682,7 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
                     assert writeVal != null || op == DELETE : "null write value found.";
 
-                    Collection<UUID> readers = null;
-                    Collection<UUID> filteredReaders = null;
-
-                    // TODO
-                    if (true) {
-                        readers = entry.readers();
-                        filteredReaders = F.view(entry.readers(), F.notEqualTo(nearNode.id()));
-                    }
+                    GridDhtCacheEntry.ReaderId[] readers = entry.readersLocked();
 
                     GridCacheUpdateAtomicResult updRes = entry.innerUpdate(
                         ver,
@@ -2762,9 +2752,10 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
                             updRes.oldValue(),
                             updRes.updateCounter());
 
-                        if (!F.isEmpty(filteredReaders))
+                        if (readers != null)
                             dhtFut.addNearWriteEntries(
-                                filteredReaders,
+                                nearNode,
+                                readers,
                                 entry,
                                 writeVal,
                                 entryProcessor,
@@ -2791,8 +2782,10 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
                                 assert f == null : f;
                             }
                         }
-                        else if (readers.contains(nearNode.id())) // Reader became primary or backup.
+                        else if (GridDhtCacheEntry.ReaderId.contains(readers, nearNode.id())) {
+                            // Reader became primary or backup.
                             entry.removeReader(nearNode.id(), req.messageId());
+                        }
                         else
                             res.addSkippedIndex(firstEntryIdx + i);
                     }

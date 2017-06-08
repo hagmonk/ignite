@@ -997,7 +997,7 @@ public class GridNearAtomicUpdateFuture extends GridNearAtomicAbstractUpdateFutu
 
             ClusterNode primary = nodes.get(0);
 
-            boolean needPrimaryRes = !mappingKnown || primary.isLocal();
+            boolean needPrimaryRes = !mappingKnown || primary.isLocal() || nearEnabled;
 
             UUID nodeId = primary.id();
 
@@ -1112,7 +1112,7 @@ public class GridNearAtomicUpdateFuture extends GridNearAtomicAbstractUpdateFutu
 
         ClusterNode primary = nodes.get(0);
 
-        boolean needPrimaryRes = !mappingKnown || primary.isLocal() || nodes.size() == 1;
+        boolean needPrimaryRes = !mappingKnown || primary.isLocal() || nodes.size() == 1 || nearEnabled;
 
         byte flags = GridNearAtomicAbstractUpdateRequest.flags(nearEnabled,
             topLocked,
