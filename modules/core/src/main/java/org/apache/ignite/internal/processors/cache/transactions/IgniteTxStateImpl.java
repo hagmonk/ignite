@@ -476,22 +476,6 @@ public class IgniteTxStateImpl extends IgniteTxLocalStateAdapter {
     }
 
     /** {@inheritDoc} */
-    @Override public boolean hasNearCacheConfigured(GridCacheSharedContext ctx, AffinityTopologyVersion topVer) {
-        DiscoCache discoCache = ctx.discovery().discoCache(topVer);
-
-        assert discoCache != null : topVer;
-
-        for (int i = 0; i < activeCacheIds.size(); i++) {
-            int cacheId = activeCacheIds.get(i);
-
-            if (discoCache.hasNearCache(cacheId))
-                return true;
-        }
-
-        return false;
-    }
-
-    /** {@inheritDoc} */
     public String toString() {
         return S.toString(IgniteTxStateImpl.class, this);
     }

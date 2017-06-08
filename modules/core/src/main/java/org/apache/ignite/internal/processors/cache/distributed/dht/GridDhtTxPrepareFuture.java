@@ -853,6 +853,7 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
             ret,
             prepErr,
             null,
+            tx.onePhaseCommit(),
             tx.activeCachesDeploymentEnabled());
 
         if (prepErr == null) {
@@ -1229,6 +1230,16 @@ public final class GridDhtTxPrepareFuture extends GridCacheCompoundFuture<Ignite
                 return;
 
             if (last) {
+                if (tx.onePhaseCommit() && !tx.nearMap().isEmpty()) {
+                    for (GridDistributedTxMapping nearMapping : tx.nearMap().values()) {
+                        if (!tx.dhtMap().containsKey(nearMapping.primary().id())) {
+                            tx.onePhaseCommit(false);
+
+                            break;
+                        }
+                    }
+                }
+
                 int miniId = 0;
 
                 assert tx.transactionNodes() != null;

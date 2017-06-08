@@ -44,11 +44,4 @@ public interface IgniteTxLocalState extends IgniteTxState {
      *
      */
     public void seal();
-
-    /**
-     * @param ctx Context.
-     * @param topVer Topology version.
-     * @return {@code True} if tx has cache with created near cache.
-     */
-    public boolean hasNearCacheConfigured(GridCacheSharedContext ctx, AffinityTopologyVersion topVer);
 }
