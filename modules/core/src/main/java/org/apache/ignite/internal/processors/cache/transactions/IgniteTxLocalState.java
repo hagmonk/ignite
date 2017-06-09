@@ -17,9 +17,6 @@
 
 package org.apache.ignite.internal.processors.cache.transactions;
 
-import org.apache.ignite.internal.processors.affinity.AffinityTopologyVersion;
-import org.apache.ignite.internal.processors.cache.GridCacheSharedContext;
-
 /**
  *
  */

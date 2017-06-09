@@ -529,10 +529,16 @@ public class IgniteTxEntry implements GridPeerDeployAware, Message {
         return isFlag(TX_ENTRY_KEEP_BINARY_FLAG_MASK);
     }
 
+    /**
+     * @param addReader Add reader flag.
+     */
     public void addReader(boolean addReader) {
         setFlag(addReader, TX_ENTRY_ADD_READER_FLAG_MASK);
     }
 
+    /**
+     * @return Add reader flag.
+     */
     public boolean addReader() {
         return isFlag(TX_ENTRY_ADD_READER_FLAG_MASK);
     }
