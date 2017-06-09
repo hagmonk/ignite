@@ -782,9 +782,10 @@ public class GridDhtCacheEntry extends GridDistributedCacheEntry {
             if (readers == null)
                 return false;
 
-            for (int i = 0; i < readers.length; i++)
+            for (int i = 0; i < readers.length; i++) {
                 if (nodeId.equals(readers[i].nodeId))
                     return true;
+            }
 
             return false;
         }

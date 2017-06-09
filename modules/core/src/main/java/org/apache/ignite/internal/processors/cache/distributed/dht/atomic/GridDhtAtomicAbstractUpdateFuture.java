@@ -256,6 +256,8 @@ public abstract class GridDhtAtomicAbstractUpdateFuture extends GridCacheFutureA
         EntryProcessor<Object, Object, Object> entryProcessor,
         long ttl,
         long expireTime) {
+        assert readers != null;
+
         CacheWriteSynchronizationMode syncMode = updateReq.writeSynchronizationMode();
 
         addNearKey(entry.key(), readers);
@@ -417,7 +419,7 @@ public abstract class GridDhtAtomicAbstractUpdateFuture extends GridCacheFutureA
             needReplyToNear = true;
         }
 
-        // If there are readers updatesthen  nearNode should not finish before primary response received.
+        // If there are readers updates then nearNode should not finish before primary response received.
         sendDhtRequests(nearNode, ret, !readersOnlyNodes);
 
         if (needReplyToNear)

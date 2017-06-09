@@ -147,7 +147,20 @@ public abstract class GridNearAtomicAbstractUpdateRequest extends GridCacheIdMes
         this.addDepInfo = addDepInfo;
     }
 
-    static byte flags(boolean nearCache,
+    /**
+     * @param nearCache {@code True} if near cache enabled on originating node.
+     * @param topLocked Topology locked flag.
+     * @param retval Return value required flag.
+     * @param affMapping {@code True} if originating node detected that rebalancing finished and
+     *    expects that update is mapped using current affinity.
+     * @param needPrimaryRes {@code True} if near node waits for primary response.
+     * @param skipStore Skip write-through to a CacheStore flag.
+     * @param keepBinary Keep binary flag.
+     * @param recovery Recovery mode flag.
+     * @return Flags.
+     */
+    static byte flags(
+        boolean nearCache,
         boolean topLocked,
         boolean retval,
         boolean affMapping,
@@ -184,6 +197,10 @@ public abstract class GridNearAtomicAbstractUpdateRequest extends GridCacheIdMes
         return flags;
     }
 
+    /**
+     * @return {@code True} if originating node detected that rebalancing finished and
+     *    expects that update is mapped using current affinity.
+     */
     boolean affinityMapping() {
         return isFlag(AFFINITY_MAPPING_FLAG_MASK);
     }
