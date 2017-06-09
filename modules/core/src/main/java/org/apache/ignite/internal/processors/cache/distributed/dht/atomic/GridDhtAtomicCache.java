@@ -2429,6 +2429,9 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
                 Object writeVal = op == TRANSFORM ? req.entryProcessor(i) : req.writeValue(i);
 
+                // Get readers before innerUpdate (reader cleared after remove).
+                GridDhtCacheEntry.ReaderId[] readers = entry.readersLocked();
+
                 GridCacheUpdateAtomicResult updRes = entry.innerUpdate(
                     ver,
                     nearNode.id(),
@@ -2458,8 +2461,6 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
                     /*prevVal*/null,
                     /*updateCntr*/null,
                     dhtFut);
-
-                GridDhtCacheEntry.ReaderId[] readers = entry.readersLocked();
 
                 if (dhtFut != null) {
                     if (updRes.sendToDht()) { // Send to backups even in case of remove-remove scenarios.
@@ -2682,6 +2683,7 @@ public class GridDhtAtomicCache<K, V> extends GridDhtCacheAdapter<K, V> {
 
                     assert writeVal != null || op == DELETE : "null write value found.";
 
+                    // Get readers before innerUpdate (reader cleared after remove).
                     GridDhtCacheEntry.ReaderId[] readers = entry.readersLocked();
 
                     GridCacheUpdateAtomicResult updRes = entry.innerUpdate(
