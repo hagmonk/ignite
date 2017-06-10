@@ -54,6 +54,9 @@ public class VisorCache extends VisorDataTransferObject {
     /** Cache name. */
     private String name;
 
+    /** Cache group name. */
+    private String grpName;
+
     /** Cache deployment ID. */
     private IgniteUuid dynamicDeploymentId;
 
@@ -116,6 +119,7 @@ public class VisorCache extends VisorDataTransferObject {
 
         CacheConfiguration cfg = ca.configuration();
 
+        grpName = cfg.getGroupName();
         mode = cfg.getCacheMode();
 
         boolean partitioned = (mode == CacheMode.PARTITIONED || mode == CacheMode.REPLICATED)
@@ -193,6 +197,7 @@ public class VisorCache extends VisorDataTransferObject {
         VisorCache c = new VisorCache();
 
         c.name = name;
+        c.grpName = grpName;
         c.mode = mode;
         c.memorySize = memorySize;
         c.indexesSize = indexesSize;
@@ -222,6 +227,13 @@ public class VisorCache extends VisorDataTransferObject {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    /**
+     * @return Cache group name.
+     */
+    public String getGroupName() {
+        return grpName;
     }
 
     /**
@@ -318,6 +330,7 @@ public class VisorCache extends VisorDataTransferObject {
     /** {@inheritDoc} */
     @Override protected void writeExternalData(ObjectOutput out) throws IOException {
         U.writeString(out, name);
+        U.writeString(out, grpName);
         U.writeGridUuid(out, dynamicDeploymentId);
         U.writeEnum(out, mode);
         out.writeLong(memorySize);
@@ -336,6 +349,7 @@ public class VisorCache extends VisorDataTransferObject {
     /** {@inheritDoc} */
     @Override protected void readExternalData(byte protoVer, ObjectInput in) throws IOException, ClassNotFoundException {
         name = U.readString(in);
+        grpName = U.readString(in);
         dynamicDeploymentId = U.readGridUuid(in);
         mode = CacheMode.fromOrdinal(in.readByte());
         memorySize = in.readLong();
